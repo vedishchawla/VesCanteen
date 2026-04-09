@@ -121,13 +121,12 @@ class PaymentActivity : AppCompatActivity() {
 
         val intent = Intent(Intent.ACTION_VIEW, uri)
 
-        // Check if any UPI app is available
-        if (intent.resolveActivity(packageManager) != null) {
-            startActivityForResult(
-                Intent.createChooser(intent, "Pay with"), UPI_REQUEST_CODE
-            )
-        } else {
-            Toast.makeText(this, "No UPI app installed! Please use Cash at Counter.",
+        // Use try-catch instead of resolveActivity (fails on Android 11+)
+        try {
+            val chooser = Intent.createChooser(intent, "Pay with")
+            startActivityForResult(chooser, UPI_REQUEST_CODE)
+        } catch (e: Exception) {
+            Toast.makeText(this, "No UPI app found! Please use Cash at Counter.",
                 Toast.LENGTH_LONG).show()
         }
     }
