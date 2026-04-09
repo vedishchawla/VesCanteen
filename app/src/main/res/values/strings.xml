@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">VES Canteen</string>
+    <string name="login_title">Login</string>
+    <string name="signup_title">Sign Up</string>
+    <string name="email_hint">Email</string>
+    <string name="password_hint">Password</string>
+    <string name="username_hint">Username</string>
+    <string name="phone_hint">Phone Number</string>
+    <string name="confirm_password_hint">Confirm Password</string>
+    <string name="cart_title">Your Cart</string>
+    <string name="profile_title">Profile</string>
+    <string name="search_hint">Search for food…</string>
+    <string name="place_order">Place Order</string>
+    <string name="back_to_menu">Back to Menu</string>
+    <string name="logout">Logout</string>
+</resources>

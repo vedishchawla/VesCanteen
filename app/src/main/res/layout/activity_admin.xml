@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/bg_light">
+
+    <!-- Admin Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="16dp"
+        android:background="@color/primary_dark"
+        android:elevation="4dp">
+
+        <ImageView
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/app_logo"
+            android:layout_marginEnd="12dp"
+            android:contentDescription="Logo" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Admin Panel"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="@color/white" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnAdminLogout"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="Logout"
+            android:textSize="12sp"
+            android:backgroundTint="@color/red_error"
+            style="@style/Widget.MaterialComponents.Button" />
+    </LinearLayout>
+
+    <!-- Tab Buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="@color/white"
+        android:elevation="2dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnTabMenu"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:text="Menu Items"
+            android:textSize="14sp"
+            android:backgroundTint="@color/primary"
+            style="@style/Widget.MaterialComponents.Button.TextButton" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnTabOrders"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:text="Orders"
+            android:textSize="14sp"
+            style="@style/Widget.MaterialComponents.Button.TextButton" />
+    </LinearLayout>
+
+    <!-- Content -->
+    <FrameLayout
+        android:id="@+id/adminContent"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <!-- Add Menu Item FAB -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabAddItem"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:src="@drawable/ic_plus"
+        android:contentDescription="Add Item"
+        app:backgroundTint="@color/accent"
+        app:tint="@color/white" />
+
+</LinearLayout>
