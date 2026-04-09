@@ -4,6 +4,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
@@ -16,11 +17,11 @@ import com.google.android.material.button.MaterialButton
 
 /**
  * RecyclerView Adapter for menu item cards in the grid.
- * Shows item count on the Add button when items are in cart.
+ * Shows ADD button → transforms to  - 1 +  stepper when items added.
  */
 class MenuAdapter(
     private var items: List<MenuItem>,
-    private val onAddClick: (MenuItem) -> Unit
+    private val onCartChanged: () -> Unit
 ) : RecyclerView.Adapter<MenuAdapter.ViewHolder>() {
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -28,6 +29,10 @@ class MenuAdapter(
         val tvFoodName: TextView = view.findViewById(R.id.tvFoodName)
         val tvPrice: TextView = view.findViewById(R.id.tvPrice)
         val btnAdd: MaterialButton = view.findViewById(R.id.btnAdd)
+        val quantityStepper: LinearLayout = view.findViewById(R.id.quantityStepper)
+        val btnStepperMinus: TextView = view.findViewById(R.id.btnStepperMinus)
+        val tvStepperCount: TextView = view.findViewById(R.id.tvStepperCount)
+        val btnStepperPlus: TextView = view.findViewById(R.id.btnStepperPlus)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -43,10 +48,10 @@ class MenuAdapter(
         holder.tvFoodName.text = item.name
         holder.tvPrice.text = "₹${item.price.toInt()}"
 
-        // Update button to show count if item is in cart
-        updateAddButton(holder.btnAdd, item)
+        // Show correct state: ADD button or stepper
+        updateStepperState(holder, item)
 
-        // Load image: first try drawable resource, then URL, then fallback
+        // Load image
         if (item.drawableResName.isNotEmpty()) {
             val resId = context.resources.getIdentifier(
                 item.drawableResName, "drawable", context.packageName
@@ -69,22 +74,38 @@ class MenuAdapter(
             holder.ivFoodImage.setImageResource(R.drawable.ic_food)
         }
 
-        // Add to cart button
+        // ADD button — first tap adds 1
         holder.btnAdd.setOnClickListener {
-            onAddClick(item)
-            updateAddButton(holder.btnAdd, item)
+            CartManager.addItem(item)
+            updateStepperState(holder, item)
+            onCartChanged()
+        }
+
+        // Stepper +
+        holder.btnStepperPlus.setOnClickListener {
+            CartManager.addItem(item)
+            updateStepperState(holder, item)
+            onCartChanged()
+        }
+
+        // Stepper -
+        holder.btnStepperMinus.setOnClickListener {
+            CartManager.removeItem(item.id)
+            updateStepperState(holder, item)
+            onCartChanged()
         }
     }
 
-    /** Updates the add button text to show quantity if item is in cart */
-    private fun updateAddButton(btn: MaterialButton, item: MenuItem) {
-        val count = CartManager.getItemQuantity(item.id)
-        if (count > 0) {
-            btn.text = "✓ $count added"
-            btn.setBackgroundColor(btn.context.getColor(R.color.green_success))
+    /** Toggle between ADD button and - count + stepper */
+    private fun updateStepperState(holder: ViewHolder, item: MenuItem) {
+        val qty = CartManager.getItemQuantity(item.id)
+        if (qty > 0) {
+            holder.btnAdd.visibility = View.GONE
+            holder.quantityStepper.visibility = View.VISIBLE
+            holder.tvStepperCount.text = qty.toString()
         } else {
-            btn.text = "ADD"
-            btn.setBackgroundColor(btn.context.getColor(R.color.accent))
+            holder.btnAdd.visibility = View.VISIBLE
+            holder.quantityStepper.visibility = View.GONE
         }
     }
 
