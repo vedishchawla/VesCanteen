@@ -137,7 +137,14 @@ class OrderConfirmationActivity : AppCompatActivity() {
 
         db.collection("orders")
             .add(order)
-            .addOnSuccessListener { /* Order saved */ }
-            .addOnFailureListener { /* Handle error silently */ }
+            .addOnSuccessListener {
+                android.util.Log.d("OrderConfirm", "Order saved to Firestore!")
+            }
+            .addOnFailureListener { e ->
+                android.util.Log.e("OrderConfirm", "ORDER SAVE FAILED: ${e.message}")
+                android.widget.Toast.makeText(this,
+                    "⚠️ Order save failed: ${e.message}",
+                    android.widget.Toast.LENGTH_LONG).show()
+            }
     }
 }

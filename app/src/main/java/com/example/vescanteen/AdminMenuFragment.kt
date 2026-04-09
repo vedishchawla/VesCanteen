@@ -1,6 +1,7 @@
 package com.example.vescanteen
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -19,9 +20,12 @@ import com.google.firebase.firestore.FirebaseFirestore
 
 /**
  * Admin Menu Fragment — CRUD operations on menu items.
- * Includes a "Reset Menu" option to seed defaults.
  */
 class AdminMenuFragment : Fragment() {
+
+    companion object {
+        private const val TAG = "AdminMenu"
+    }
 
     private val db = FirebaseFirestore.getInstance()
 
@@ -43,7 +47,6 @@ class AdminMenuFragment : Fragment() {
         fabAdd = view.findViewById(R.id.fabAddItem)
 
         rvMenu.layoutManager = LinearLayoutManager(context)
-
         fabAdd.setOnClickListener { showAddOrResetDialog() }
 
         loadMenuItems()
@@ -55,6 +58,7 @@ class AdminMenuFragment : Fragment() {
         db.collection("menuItems").get()
             .addOnSuccessListener { result ->
                 progressBar.visibility = View.GONE
+                Log.d(TAG, "Loaded ${result.size()} menu items")
 
                 if (result.isEmpty) {
                     rvMenu.visibility = View.GONE
@@ -79,7 +83,8 @@ class AdminMenuFragment : Fragment() {
                 progressBar.visibility = View.GONE
                 rvMenu.visibility = View.GONE
                 emptyState.visibility = View.VISIBLE
-                Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+                Log.e(TAG, "Load failed: ${e.message}")
+                Toast.makeText(context, "Error loading menu: ${e.message}", Toast.LENGTH_LONG).show()
             }
     }
 
@@ -93,21 +98,22 @@ class AdminMenuFragment : Fragment() {
                         Toast.makeText(context, "Deleted", Toast.LENGTH_SHORT).show()
                         loadMenuItems()
                     }
+                    .addOnFailureListener { e ->
+                        Toast.makeText(context, "Delete failed: ${e.message}", Toast.LENGTH_LONG).show()
+                    }
             }
             .setNegativeButton("Cancel", null)
             .show()
     }
 
-    /** Shows options: Add single item, or Reset menu with defaults */
     private fun showAddOrResetDialog() {
-        val options = arrayOf("➕ Add New Item", "🔄 Reset Menu (Load Defaults)", "🗑 Delete All Items")
+        val options = arrayOf("➕ Add New Item", "🔄 Reset Menu (Load 10 Defaults)")
         AlertDialog.Builder(requireContext())
             .setTitle("Menu Actions")
             .setItems(options) { _, which ->
                 when (which) {
                     0 -> showAddItemDialog()
                     1 -> confirmResetMenu()
-                    2 -> confirmDeleteAll()
                 }
             }
             .show()
@@ -116,80 +122,84 @@ class AdminMenuFragment : Fragment() {
     private fun confirmResetMenu() {
         AlertDialog.Builder(requireContext())
             .setTitle("Reset Menu")
-            .setMessage("This will delete ALL current items and load the default 10 items. Continue?")
+            .setMessage("This will delete ALL current items and load 10 default items. Continue?")
             .setPositiveButton("Reset") { _, _ -> resetMenuWithDefaults() }
             .setNegativeButton("Cancel", null)
             .show()
     }
 
-    private fun confirmDeleteAll() {
-        AlertDialog.Builder(requireContext())
-            .setTitle("Delete All Items")
-            .setMessage("This will remove ALL menu items. Are you sure?")
-            .setPositiveButton("Delete All") { _, _ ->
-                progressBar.visibility = View.VISIBLE
-                db.collection("menuItems").get().addOnSuccessListener { result ->
-                    val batch = db.batch()
-                    for (doc in result) {
-                        batch.delete(doc.reference)
-                    }
-                    batch.commit().addOnSuccessListener {
-                        progressBar.visibility = View.GONE
-                        Toast.makeText(context, "All items deleted", Toast.LENGTH_SHORT).show()
-                        loadMenuItems()
-                    }
-                }
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
-
-    /** Clears Firestore menuItems and seeds with the 10 default items */
+    /** Deletes all items, then adds 10 defaults one by one */
     private fun resetMenuWithDefaults() {
         progressBar.visibility = View.VISIBLE
+        Toast.makeText(context, "Resetting menu...", Toast.LENGTH_SHORT).show()
 
-        // First delete all existing items
-        db.collection("menuItems").get().addOnSuccessListener { result ->
-            val batch = db.batch()
-            for (doc in result) {
-                batch.delete(doc.reference)
-            }
-            batch.commit().addOnSuccessListener {
-                // Now add defaults
-                seedDefaultItems()
-            }
-        }
-    }
+        // Step 1: Delete all existing
+        db.collection("menuItems").get()
+            .addOnSuccessListener { result ->
+                Log.d(TAG, "Deleting ${result.size()} existing items")
 
-    private fun seedDefaultItems() {
-        val defaults = listOf(
-            mapOf("name" to "Poha", "price" to 35.0, "category" to "Breakfast", "imageUrl" to "", "description" to "Light and healthy flattened rice", "isAvailable" to true, "drawableResName" to "food_poha"),
-            mapOf("name" to "Chai", "price" to 10.0, "category" to "Beverages", "imageUrl" to "", "description" to "Hot Indian tea", "isAvailable" to true, "drawableResName" to "food_chai"),
-            mapOf("name" to "Samosa", "price" to 10.0, "category" to "Breakfast", "imageUrl" to "", "description" to "Crispy fried pastry", "isAvailable" to true, "drawableResName" to "food_samosa"),
-            mapOf("name" to "Vada Pav", "price" to 15.0, "category" to "Breakfast", "imageUrl" to "", "description" to "Mumbai's favourite snack", "isAvailable" to true, "drawableResName" to "food_vadapav"),
-            mapOf("name" to "Coffee", "price" to 15.0, "category" to "Beverages", "imageUrl" to "", "description" to "Fresh brewed coffee", "isAvailable" to true, "drawableResName" to "food_coffee"),
-            mapOf("name" to "Sandwich", "price" to 30.0, "category" to "Breakfast", "imageUrl" to "", "description" to "Grilled veg sandwich", "isAvailable" to true, "drawableResName" to "food_sandwich"),
-            mapOf("name" to "Juice", "price" to 25.0, "category" to "Beverages", "imageUrl" to "", "description" to "Fresh fruit juice", "isAvailable" to true, "drawableResName" to "food_juice"),
-            mapOf("name" to "Maggi", "price" to 25.0, "category" to "For You", "imageUrl" to "", "description" to "2-minute noodles", "isAvailable" to true, "drawableResName" to "food_maggi"),
-            mapOf("name" to "Dosa", "price" to 40.0, "category" to "Breakfast", "imageUrl" to "", "description" to "Crispy South Indian crepe", "isAvailable" to true, "drawableResName" to "food_dosa"),
-            mapOf("name" to "Lassi", "price" to 20.0, "category" to "Beverages", "imageUrl" to "", "description" to "Sweet yogurt drink", "isAvailable" to true, "drawableResName" to "food_lassi")
-        )
+                if (result.isEmpty) {
+                    // Nothing to delete, just seed
+                    seedDefaults()
+                    return@addOnSuccessListener
+                }
 
-        val batch = db.batch()
-        for (item in defaults) {
-            val docRef = db.collection("menuItems").document()
-            batch.set(docRef, item)
-        }
-        batch.commit()
-            .addOnSuccessListener {
-                progressBar.visibility = View.GONE
-                Toast.makeText(context, "✅ Menu reset with 10 default items!", Toast.LENGTH_SHORT).show()
-                loadMenuItems()
+                var deleteCount = 0
+                val total = result.size()
+
+                for (doc in result) {
+                    doc.reference.delete()
+                        .addOnSuccessListener {
+                            deleteCount++
+                            Log.d(TAG, "Deleted $deleteCount/$total")
+                            if (deleteCount >= total) {
+                                // All deleted, now seed
+                                seedDefaults()
+                            }
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e(TAG, "Delete failed: ${e.message}")
+                        }
+                }
             }
             .addOnFailureListener { e ->
                 progressBar.visibility = View.GONE
-                Toast.makeText(context, "Failed: ${e.message}", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, "Reset failed: ${e.message}", Toast.LENGTH_LONG).show()
             }
+    }
+
+    /** Adds 10 default items to Firestore one by one */
+    private fun seedDefaults() {
+        val defaults = HomeFragment.getDefaultMenuItems()
+        var addedCount = 0
+
+        for (item in defaults) {
+            val data = hashMapOf(
+                "name" to item.name,
+                "price" to item.price,
+                "category" to item.category,
+                "imageUrl" to "",
+                "description" to item.description,
+                "isAvailable" to true,
+                "drawableResName" to item.drawableResName
+            )
+
+            db.collection("menuItems").add(data)
+                .addOnSuccessListener {
+                    addedCount++
+                    Log.d(TAG, "Added ${item.name} ($addedCount/${defaults.size})")
+
+                    if (addedCount >= defaults.size) {
+                        progressBar.visibility = View.GONE
+                        Toast.makeText(context, "✅ 10 menu items loaded!", Toast.LENGTH_SHORT).show()
+                        loadMenuItems()
+                    }
+                }
+                .addOnFailureListener { e ->
+                    Log.e(TAG, "Failed to add ${item.name}: ${e.message}")
+                    Toast.makeText(context, "Failed to add ${item.name}: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+        }
     }
 
     private fun showAddItemDialog() {

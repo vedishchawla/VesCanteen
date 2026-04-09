@@ -1,11 +1,13 @@
 package com.example.vescanteen
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -17,11 +19,28 @@ import com.google.firebase.firestore.FirebaseFirestore
 import java.util.Calendar
 
 /**
- * Home Fragment - Displays menu items from Firestore in a grid.
- * If Firestore is empty, seeds default items to Firestore first.
- * This ensures admin and customer see the same menu.
+ * Home Fragment - Displays menu items in a grid.
+ * Loads from Firestore. Falls back to hardcoded defaults instantly.
  */
 class HomeFragment : Fragment() {
+
+    companion object {
+        private const val TAG = "HomeFragment"
+
+        /** The 10 default menu items — shared between customer and admin */
+        fun getDefaultMenuItems(): List<MenuItem> = listOf(
+            MenuItem("default_1", "Poha", 35.0, "Breakfast", "", "Light and healthy flattened rice", true, "food_poha"),
+            MenuItem("default_2", "Chai", 10.0, "Beverages", "", "Hot Indian tea", true, "food_chai"),
+            MenuItem("default_3", "Samosa", 10.0, "Breakfast", "", "Crispy fried pastry", true, "food_samosa"),
+            MenuItem("default_4", "Vada Pav", 15.0, "Breakfast", "", "Mumbai's favourite snack", true, "food_vadapav"),
+            MenuItem("default_5", "Coffee", 15.0, "Beverages", "", "Fresh brewed coffee", true, "food_coffee"),
+            MenuItem("default_6", "Sandwich", 30.0, "Breakfast", "", "Grilled veg sandwich", true, "food_sandwich"),
+            MenuItem("default_7", "Juice", 25.0, "Beverages", "", "Fresh fruit juice", true, "food_juice"),
+            MenuItem("default_8", "Maggi", 25.0, "For You", "", "2-minute noodles", true, "food_maggi"),
+            MenuItem("default_9", "Dosa", 40.0, "Breakfast", "", "Crispy South Indian crepe", true, "food_dosa"),
+            MenuItem("default_10", "Lassi", 20.0, "Beverages", "", "Sweet yogurt drink", true, "food_lassi")
+        )
+    }
 
     private lateinit var rvMenu: RecyclerView
     private lateinit var tvGreeting: TextView
@@ -73,7 +92,10 @@ class HomeFragment : Fragment() {
             (activity as? MainActivity)?.navigateToCart()
         }
 
-        loadMenuItems()
+        // Show defaults immediately, then try Firestore
+        allItems.addAll(getDefaultMenuItems())
+        filterByCategory(currentCategory)
+        loadMenuFromFirestore()
     }
 
     override fun onResume() {
@@ -107,16 +129,19 @@ class HomeFragment : Fragment() {
         }
     }
 
-    /** Load menu from Firestore. If empty, seed defaults TO Firestore first. */
-    private fun loadMenuItems() {
+    /** Try to load from Firestore. If empty, seed defaults. If fails, keep showing local defaults. */
+    private fun loadMenuFromFirestore() {
         db.collection("menuItems").get()
             .addOnSuccessListener { result ->
-                allItems.clear()
+                Log.d(TAG, "Firestore menuItems: ${result.size()} items")
 
                 if (result.isEmpty) {
-                    // No items in Firestore — seed defaults
-                    seedDefaultItemsToFirestore()
+                    // Firestore empty — seed defaults to it
+                    Log.d(TAG, "Firestore empty, seeding defaults...")
+                    seedDefaultsToFirestore()
                 } else {
+                    // Load from Firestore
+                    allItems.clear()
                     for (doc in result) {
                         val item = MenuItem(
                             id = doc.id,
@@ -133,60 +158,42 @@ class HomeFragment : Fragment() {
                     filterByCategory(currentCategory)
                 }
             }
-            .addOnFailureListener {
-                // Offline fallback — load hardcoded
-                loadHardcodedDefaults()
-                filterByCategory(currentCategory)
+            .addOnFailureListener { e ->
+                Log.e(TAG, "Firestore load failed: ${e.message}")
+                // Keep showing local defaults — already loaded
             }
     }
 
-    /** Seeds the 10 default items to Firestore, then reloads */
-    private fun seedDefaultItemsToFirestore() {
-        val defaults = listOf(
-            mapOf("name" to "Poha", "price" to 35.0, "category" to "Breakfast", "imageUrl" to "", "description" to "Light and healthy flattened rice", "isAvailable" to true, "drawableResName" to "food_poha"),
-            mapOf("name" to "Chai", "price" to 10.0, "category" to "Beverages", "imageUrl" to "", "description" to "Hot Indian tea", "isAvailable" to true, "drawableResName" to "food_chai"),
-            mapOf("name" to "Samosa", "price" to 10.0, "category" to "Breakfast", "imageUrl" to "", "description" to "Crispy fried pastry", "isAvailable" to true, "drawableResName" to "food_samosa"),
-            mapOf("name" to "Vada Pav", "price" to 15.0, "category" to "Breakfast", "imageUrl" to "", "description" to "Mumbai's favourite snack", "isAvailable" to true, "drawableResName" to "food_vadapav"),
-            mapOf("name" to "Coffee", "price" to 15.0, "category" to "Beverages", "imageUrl" to "", "description" to "Fresh brewed coffee", "isAvailable" to true, "drawableResName" to "food_coffee"),
-            mapOf("name" to "Sandwich", "price" to 30.0, "category" to "Breakfast", "imageUrl" to "", "description" to "Grilled veg sandwich", "isAvailable" to true, "drawableResName" to "food_sandwich"),
-            mapOf("name" to "Juice", "price" to 25.0, "category" to "Beverages", "imageUrl" to "", "description" to "Fresh fruit juice", "isAvailable" to true, "drawableResName" to "food_juice"),
-            mapOf("name" to "Maggi", "price" to 25.0, "category" to "For You", "imageUrl" to "", "description" to "2-minute noodles", "isAvailable" to true, "drawableResName" to "food_maggi"),
-            mapOf("name" to "Dosa", "price" to 40.0, "category" to "Breakfast", "imageUrl" to "", "description" to "Crispy South Indian crepe", "isAvailable" to true, "drawableResName" to "food_dosa"),
-            mapOf("name" to "Lassi", "price" to 20.0, "category" to "Beverages", "imageUrl" to "", "description" to "Sweet yogurt drink", "isAvailable" to true, "drawableResName" to "food_lassi")
-        )
+    /** Writes the 10 default items to Firestore so admin can see them */
+    private fun seedDefaultsToFirestore() {
+        val defaults = getDefaultMenuItems()
+        var successCount = 0
 
-        val batch = db.batch()
         for (item in defaults) {
-            val docRef = db.collection("menuItems").document()
-            batch.set(docRef, item)
-        }
-        batch.commit()
-            .addOnSuccessListener {
-                // Reload from Firestore
-                loadMenuItems()
-            }
-            .addOnFailureListener {
-                // Fallback
-                loadHardcodedDefaults()
-                filterByCategory(currentCategory)
-            }
-    }
+            val data = hashMapOf(
+                "name" to item.name,
+                "price" to item.price,
+                "category" to item.category,
+                "imageUrl" to item.imageUrl,
+                "description" to item.description,
+                "isAvailable" to item.isAvailable,
+                "drawableResName" to item.drawableResName
+            )
 
-    /** Offline fallback only */
-    private fun loadHardcodedDefaults() {
-        allItems.clear()
-        allItems.addAll(listOf(
-            MenuItem("1", "Poha", 35.0, "Breakfast", "", "Light and healthy flattened rice", true, "food_poha"),
-            MenuItem("2", "Chai", 10.0, "Beverages", "", "Hot Indian tea", true, "food_chai"),
-            MenuItem("3", "Samosa", 10.0, "Breakfast", "", "Crispy fried pastry", true, "food_samosa"),
-            MenuItem("4", "Vada Pav", 15.0, "Breakfast", "", "Mumbai's favourite snack", true, "food_vadapav"),
-            MenuItem("5", "Coffee", 15.0, "Beverages", "", "Fresh brewed coffee", true, "food_coffee"),
-            MenuItem("6", "Sandwich", 30.0, "Breakfast", "", "Grilled veg sandwich", true, "food_sandwich"),
-            MenuItem("7", "Juice", 25.0, "Beverages", "", "Fresh fruit juice", true, "food_juice"),
-            MenuItem("8", "Maggi", 25.0, "For You", "", "2-minute noodles", true, "food_maggi"),
-            MenuItem("9", "Dosa", 40.0, "Breakfast", "", "Crispy South Indian crepe", true, "food_dosa"),
-            MenuItem("10", "Lassi", 20.0, "Beverages", "", "Sweet yogurt drink", true, "food_lassi")
-        ))
+            db.collection("menuItems").add(data)
+                .addOnSuccessListener {
+                    successCount++
+                    Log.d(TAG, "Seeded: ${item.name} ($successCount/10)")
+                    if (successCount == defaults.size) {
+                        Log.d(TAG, "All 10 items seeded to Firestore!")
+                        // Reload from Firestore
+                        loadMenuFromFirestore()
+                    }
+                }
+                .addOnFailureListener { e ->
+                    Log.e(TAG, "Failed to seed ${item.name}: ${e.message}")
+                }
+        }
     }
 
     private fun filterByCategory(category: String) {
