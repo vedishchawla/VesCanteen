@@ -56,8 +56,8 @@ class CartFragment : Fragment() {
                 Toast.makeText(context, "Cart is empty!", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            // Navigate to order confirmation
-            val intent = Intent(context, OrderConfirmationActivity::class.java)
+            // Navigate to payment screen
+            val intent = Intent(context, PaymentActivity::class.java)
             startActivity(intent)
         }
 

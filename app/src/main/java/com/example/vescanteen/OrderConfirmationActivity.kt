@@ -18,13 +18,14 @@ import java.util.Locale
 
 /**
  * Order Confirmation Activity - Shows order success with token number.
- * Saves order to Firestore, shows notification, and clears the cart.
+ * Displays payment method, saves to Firestore, and sends notification.
  */
 class OrderConfirmationActivity : AppCompatActivity() {
 
     private lateinit var tvTokenNumber: TextView
     private lateinit var tvOrderTime: TextView
     private lateinit var tvOrderTotal: TextView
+    private lateinit var tvPaymentMethod: TextView
     private lateinit var orderItemsContainer: LinearLayout
     private lateinit var btnBackHome: MaterialButton
 
@@ -38,6 +39,7 @@ class OrderConfirmationActivity : AppCompatActivity() {
         tvTokenNumber = findViewById(R.id.tvTokenNumber)
         tvOrderTime = findViewById(R.id.tvOrderTime)
         tvOrderTotal = findViewById(R.id.tvOrderTotal)
+        tvPaymentMethod = findViewById(R.id.tvPaymentMethod)
         orderItemsContainer = findViewById(R.id.orderItemsContainer)
         btnBackHome = findViewById(R.id.btnBackHome)
 
@@ -46,6 +48,9 @@ class OrderConfirmationActivity : AppCompatActivity() {
 
         // Create notification channel
         NotificationHelper.createChannel(this)
+
+        // Get payment method from intent
+        val paymentMethod = intent.getStringExtra("paymentMethod") ?: "Cash at Counter"
 
         // Generate token number (random 3-digit)
         val tokenNumber = (100..999).random()
@@ -62,6 +67,7 @@ class OrderConfirmationActivity : AppCompatActivity() {
         tvTokenNumber.text = "#$tokenNumber"
         tvOrderTime.text = currentTime
         tvOrderTotal.text = "₹${totalPrice.toInt()}"
+        tvPaymentMethod.text = paymentMethod
 
         // Display order items
         for (cartItem in cartItems) {
@@ -74,7 +80,7 @@ class OrderConfirmationActivity : AppCompatActivity() {
         }
 
         // Save order to Firestore
-        saveOrderToFirestore(tokenNumber, cartItems, totalPrice)
+        saveOrderToFirestore(tokenNumber, cartItems, totalPrice, paymentMethod)
 
         // 🔔 Show notification
         NotificationHelper.showOrderConfirmation(this, tokenNumber, totalPrice)
@@ -104,7 +110,8 @@ class OrderConfirmationActivity : AppCompatActivity() {
     private fun saveOrderToFirestore(
         tokenNumber: Int,
         cartItems: List<com.example.vescanteen.model.CartItem>,
-        totalPrice: Double
+        totalPrice: Double,
+        paymentMethod: String
     ) {
         val user = auth.currentUser ?: return
 
@@ -123,6 +130,7 @@ class OrderConfirmationActivity : AppCompatActivity() {
             "totalPrice" to totalPrice,
             "tokenNumber" to tokenNumber,
             "status" to "confirmed",
+            "paymentMethod" to paymentMethod,
             "timestamp" to System.currentTimeMillis()
         )
 
