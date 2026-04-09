@@ -38,12 +38,13 @@ class AdminOrderAdapter(
         val token = order["token"] as? Int ?: 0
         val total = order["total"] as? Double ?: 0.0
         val status = order["status"] as? String ?: "confirmed"
+        val paymentMethod = order["paymentMethod"] as? String ?: "N/A"
         val timestamp = order["timestamp"] as? Long ?: 0
         val items = order["items"] as? String ?: ""
 
         holder.tvToken.text = "Token #$token"
         holder.tvStatus.text = status.replaceFirstChar { it.uppercase() }
-        holder.tvItems.text = items
+        holder.tvItems.text = "$items\nPayment: $paymentMethod"
         holder.tvTotal.text = "₹${total.toInt()}"
 
         // Format timestamp
