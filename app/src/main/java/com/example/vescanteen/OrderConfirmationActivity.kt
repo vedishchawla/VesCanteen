@@ -1,9 +1,14 @@
 package com.example.vescanteen
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.google.android.material.button.MaterialButton
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -13,7 +18,7 @@ import java.util.Locale
 
 /**
  * Order Confirmation Activity - Shows order success with token number.
- * Saves order to Firestore and clears the cart.
+ * Saves order to Firestore, shows notification, and clears the cart.
  */
 class OrderConfirmationActivity : AppCompatActivity() {
 
@@ -35,6 +40,12 @@ class OrderConfirmationActivity : AppCompatActivity() {
         tvOrderTotal = findViewById(R.id.tvOrderTotal)
         orderItemsContainer = findViewById(R.id.orderItemsContainer)
         btnBackHome = findViewById(R.id.btnBackHome)
+
+        // Request notification permission on Android 13+
+        requestNotificationPermission()
+
+        // Create notification channel
+        NotificationHelper.createChannel(this)
 
         // Generate token number (random 3-digit)
         val tokenNumber = (100..999).random()
@@ -65,12 +76,28 @@ class OrderConfirmationActivity : AppCompatActivity() {
         // Save order to Firestore
         saveOrderToFirestore(tokenNumber, cartItems, totalPrice)
 
+        // 🔔 Show notification
+        NotificationHelper.showOrderConfirmation(this, tokenNumber, totalPrice)
+
         // Clear cart after order is placed
         CartManager.clearCart()
 
         // Back to menu
         btnBackHome.setOnClickListener {
             finish()
+        }
+    }
+
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                    1001
+                )
+            }
         }
     }
 
