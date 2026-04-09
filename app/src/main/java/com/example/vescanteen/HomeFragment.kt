@@ -43,6 +43,7 @@ class HomeFragment : Fragment() {
     }
 
     private lateinit var rvMenu: RecyclerView
+    private lateinit var tvTimeGreeting: TextView
     private lateinit var tvGreeting: TextView
     private lateinit var tvCartBadge: TextView
     private lateinit var cartBadgeContainer: FrameLayout
@@ -68,6 +69,7 @@ class HomeFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         rvMenu = view.findViewById(R.id.rvMenu)
+        tvTimeGreeting = view.findViewById(R.id.tvTimeGreeting)
         tvGreeting = view.findViewById(R.id.tvGreeting)
         tvCartBadge = view.findViewById(R.id.tvCartBadge)
         cartBadgeContainer = view.findViewById(R.id.cartBadgeContainer)
@@ -114,18 +116,21 @@ class HomeFragment : Fragment() {
             else -> "Good Evening"
         }
 
+        // Set the small top label
+        tvTimeGreeting.text = "$timeGreeting 👋"
+
         val user = auth.currentUser
         if (user != null) {
             db.collection("users").document(user.uid).get()
                 .addOnSuccessListener { doc ->
                     val username = doc.getString("username") ?: "Student"
-                    tvGreeting.text = "$timeGreeting, $username! ☀️"
+                    tvGreeting.text = "Hey, $username!"
                 }
                 .addOnFailureListener {
-                    tvGreeting.text = "$timeGreeting!"
+                    tvGreeting.text = "Welcome!"
                 }
         } else {
-            tvGreeting.text = "$timeGreeting!"
+            tvGreeting.text = "Welcome!"
         }
     }
 
