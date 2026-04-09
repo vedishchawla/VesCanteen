@@ -110,8 +110,8 @@ app/src/main/java/com/example/vescanteen/
 
 1. **Clone the repo**
    ```bash
-   git clone https://github.com/vedishchawla/VES-Canteen.git
-   cd VES-Canteen
+   git clone https://github.com/vedishchawla/VesCanteen.git
+   cd VesCanteen
    ```
 
 2. **Add Firebase config**
