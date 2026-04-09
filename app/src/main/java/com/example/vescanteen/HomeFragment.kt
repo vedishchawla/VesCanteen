@@ -6,7 +6,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.TextView
-import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -18,8 +17,9 @@ import com.google.firebase.firestore.FirebaseFirestore
 import java.util.Calendar
 
 /**
- * Home Fragment - Displays menu items in a grid.
- * Greeting is time-based (Good Morning / Afternoon / Evening).
+ * Home Fragment - Displays menu items from Firestore in a grid.
+ * If Firestore is empty, seeds default items to Firestore first.
+ * This ensures admin and customer see the same menu.
  */
 class HomeFragment : Fragment() {
 
@@ -79,7 +79,7 @@ class HomeFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         updateCartBadge()
-        menuAdapter.notifyDataSetChanged() // Refresh button counts on return
+        menuAdapter.notifyDataSetChanged()
     }
 
     /** Time-based greeting */
@@ -107,26 +107,73 @@ class HomeFragment : Fragment() {
         }
     }
 
+    /** Load menu from Firestore. If empty, seed defaults TO Firestore first. */
     private fun loadMenuItems() {
         db.collection("menuItems").get()
             .addOnSuccessListener { result ->
                 allItems.clear()
-                for (doc in result) {
-                    val item = doc.toObject(MenuItem::class.java).copy(id = doc.id)
-                    allItems.add(item)
+
+                if (result.isEmpty) {
+                    // No items in Firestore — seed defaults
+                    seedDefaultItemsToFirestore()
+                } else {
+                    for (doc in result) {
+                        val item = MenuItem(
+                            id = doc.id,
+                            name = doc.getString("name") ?: "",
+                            price = doc.getDouble("price") ?: 0.0,
+                            category = doc.getString("category") ?: "",
+                            imageUrl = doc.getString("imageUrl") ?: "",
+                            description = doc.getString("description") ?: "",
+                            isAvailable = doc.getBoolean("isAvailable") ?: true,
+                            drawableResName = doc.getString("drawableResName") ?: ""
+                        )
+                        allItems.add(item)
+                    }
+                    filterByCategory(currentCategory)
                 }
-                if (allItems.isEmpty()) {
-                    loadDefaultItems()
-                }
-                filterByCategory(currentCategory)
             }
             .addOnFailureListener {
-                loadDefaultItems()
+                // Offline fallback — load hardcoded
+                loadHardcodedDefaults()
                 filterByCategory(currentCategory)
             }
     }
 
-    private fun loadDefaultItems() {
+    /** Seeds the 10 default items to Firestore, then reloads */
+    private fun seedDefaultItemsToFirestore() {
+        val defaults = listOf(
+            mapOf("name" to "Poha", "price" to 35.0, "category" to "Breakfast", "imageUrl" to "", "description" to "Light and healthy flattened rice", "isAvailable" to true, "drawableResName" to "food_poha"),
+            mapOf("name" to "Chai", "price" to 10.0, "category" to "Beverages", "imageUrl" to "", "description" to "Hot Indian tea", "isAvailable" to true, "drawableResName" to "food_chai"),
+            mapOf("name" to "Samosa", "price" to 10.0, "category" to "Breakfast", "imageUrl" to "", "description" to "Crispy fried pastry", "isAvailable" to true, "drawableResName" to "food_samosa"),
+            mapOf("name" to "Vada Pav", "price" to 15.0, "category" to "Breakfast", "imageUrl" to "", "description" to "Mumbai's favourite snack", "isAvailable" to true, "drawableResName" to "food_vadapav"),
+            mapOf("name" to "Coffee", "price" to 15.0, "category" to "Beverages", "imageUrl" to "", "description" to "Fresh brewed coffee", "isAvailable" to true, "drawableResName" to "food_coffee"),
+            mapOf("name" to "Sandwich", "price" to 30.0, "category" to "Breakfast", "imageUrl" to "", "description" to "Grilled veg sandwich", "isAvailable" to true, "drawableResName" to "food_sandwich"),
+            mapOf("name" to "Juice", "price" to 25.0, "category" to "Beverages", "imageUrl" to "", "description" to "Fresh fruit juice", "isAvailable" to true, "drawableResName" to "food_juice"),
+            mapOf("name" to "Maggi", "price" to 25.0, "category" to "For You", "imageUrl" to "", "description" to "2-minute noodles", "isAvailable" to true, "drawableResName" to "food_maggi"),
+            mapOf("name" to "Dosa", "price" to 40.0, "category" to "Breakfast", "imageUrl" to "", "description" to "Crispy South Indian crepe", "isAvailable" to true, "drawableResName" to "food_dosa"),
+            mapOf("name" to "Lassi", "price" to 20.0, "category" to "Beverages", "imageUrl" to "", "description" to "Sweet yogurt drink", "isAvailable" to true, "drawableResName" to "food_lassi")
+        )
+
+        val batch = db.batch()
+        for (item in defaults) {
+            val docRef = db.collection("menuItems").document()
+            batch.set(docRef, item)
+        }
+        batch.commit()
+            .addOnSuccessListener {
+                // Reload from Firestore
+                loadMenuItems()
+            }
+            .addOnFailureListener {
+                // Fallback
+                loadHardcodedDefaults()
+                filterByCategory(currentCategory)
+            }
+    }
+
+    /** Offline fallback only */
+    private fun loadHardcodedDefaults() {
         allItems.clear()
         allItems.addAll(listOf(
             MenuItem("1", "Poha", 35.0, "Breakfast", "", "Light and healthy flattened rice", true, "food_poha"),

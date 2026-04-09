@@ -84,7 +84,16 @@ class SearchFragment : Fragment() {
             .addOnSuccessListener { result ->
                 allItems.clear()
                 for (doc in result) {
-                    val item = doc.toObject(MenuItem::class.java).copy(id = doc.id)
+                    val item = MenuItem(
+                        id = doc.id,
+                        name = doc.getString("name") ?: "",
+                        price = doc.getDouble("price") ?: 0.0,
+                        category = doc.getString("category") ?: "",
+                        imageUrl = doc.getString("imageUrl") ?: "",
+                        description = doc.getString("description") ?: "",
+                        isAvailable = doc.getBoolean("isAvailable") ?: true,
+                        drawableResName = doc.getString("drawableResName") ?: ""
+                    )
                     allItems.add(item)
                 }
                 if (allItems.isEmpty()) loadDefaults()
