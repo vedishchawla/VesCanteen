@@ -3,22 +3,24 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="8dp"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="1dp">
+    android:layout_marginBottom="10dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="2dp"
+    app:cardBackgroundColor="@color/white">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="14dp">
+        android:padding="16dp">
 
-        <!-- Header: Token + Status -->
+        <!-- Header Row: Token + Status Badge -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:gravity="center_vertical"
+            android:layout_marginBottom="10dp">
 
             <TextView
                 android:id="@+id/tvOrderToken"
@@ -26,19 +28,19 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Token #001"
-                android:textSize="16sp"
+                android:textSize="18sp"
                 android:textStyle="bold"
-                android:textColor="@color/primary" />
+                android:textColor="@color/text_primary" />
 
             <TextView
                 android:id="@+id/tvOrderStatus"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Confirmed"
-                android:textSize="12sp"
+                android:text="Pending"
+                android:textSize="11sp"
                 android:textStyle="bold"
-                android:textColor="@color/green_success"
-                android:background="@drawable/status_bg"
+                android:textColor="@color/white"
+                android:background="@drawable/status_badge_bg"
                 android:paddingHorizontal="12dp"
                 android:paddingVertical="4dp" />
         </LinearLayout>
@@ -48,35 +50,59 @@
             android:id="@+id/tvOrderItems"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Items list"
+            android:text="Items"
             android:textSize="13sp"
             android:textColor="@color/text_secondary"
-            android:layout_marginTop="8dp" />
+            android:layout_marginBottom="8dp" />
 
-        <!-- Total + Time -->
+        <!-- Payment + Total Row -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginTop="8dp">
+            android:layout_marginBottom="4dp">
 
             <TextView
-                android:id="@+id/tvOrderTotal"
+                android:id="@+id/tvOrderPayment"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="₹0"
-                android:textSize="15sp"
-                android:textStyle="bold"
-                android:textColor="@color/text_primary" />
-
-            <TextView
-                android:id="@+id/tvOrderTime"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Time"
+                android:text="💳 UPI"
                 android:textSize="12sp"
                 android:textColor="@color/text_secondary" />
+
+            <TextView
+                android:id="@+id/tvOrderTotal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="₹0"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/green_success" />
         </LinearLayout>
+
+        <!-- Time -->
+        <TextView
+            android:id="@+id/tvOrderTime"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="12:00 PM"
+            android:textSize="11sp"
+            android:textColor="@color/gray_medium"
+            android:layout_marginBottom="10dp" />
+
+        <!-- Action Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnOrderAction"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:text="Mark as Preparing"
+            android:textSize="13sp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            app:cornerRadius="10dp"
+            android:backgroundTint="@color/primary"
+            style="@style/Widget.MaterialComponents.Button" />
+
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>
