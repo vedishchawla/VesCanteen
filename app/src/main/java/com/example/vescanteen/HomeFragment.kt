@@ -86,11 +86,10 @@ class HomeFragment : Fragment() {
     private fun loadGreeting() {
         val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
         val timeGreeting = when {
-            hour < 5 -> "Good Night"
+            hour < 5 -> "Hey, Night Owl"
             hour < 12 -> "Good Morning"
             hour < 17 -> "Good Afternoon"
-            hour < 21 -> "Good Evening"
-            else -> "Good Night"
+            else -> "Good Evening"
         }
 
         val user = auth.currentUser
