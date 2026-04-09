@@ -58,11 +58,8 @@ class HomeFragment : Fragment() {
 
         loadGreeting()
 
-        menuAdapter = MenuAdapter(emptyList()) { menuItem ->
-            CartManager.addItem(menuItem)
+        menuAdapter = MenuAdapter(emptyList()) {
             updateCartBadge()
-            menuAdapter.notifyDataSetChanged() // Refresh to update button counts
-            Toast.makeText(context, "${menuItem.name} added to cart!", Toast.LENGTH_SHORT).show()
         }
         rvMenu.layoutManager = GridLayoutManager(context, 2)
         rvMenu.adapter = menuAdapter

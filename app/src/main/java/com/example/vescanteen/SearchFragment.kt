@@ -46,9 +46,8 @@ class SearchFragment : Fragment() {
         searchEmptyState = view.findViewById(R.id.searchEmptyState)
         tvSearchHint = view.findViewById(R.id.tvSearchHint)
 
-        menuAdapter = MenuAdapter(emptyList()) { menuItem ->
-            CartManager.addItem(menuItem)
-            Toast.makeText(context, "${menuItem.name} added to cart!", Toast.LENGTH_SHORT).show()
+        menuAdapter = MenuAdapter(emptyList()) {
+            // Cart changed — no additional action needed in search
         }
         rvSearchResults.layoutManager = GridLayoutManager(context, 2)
         rvSearchResults.adapter = menuAdapter
