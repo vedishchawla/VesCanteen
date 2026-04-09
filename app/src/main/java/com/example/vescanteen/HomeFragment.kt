@@ -82,13 +82,15 @@ class HomeFragment : Fragment() {
         menuAdapter.notifyDataSetChanged() // Refresh button counts on return
     }
 
-    /** Time-based greeting: Good Morning / Afternoon / Evening */
+    /** Time-based greeting */
     private fun loadGreeting() {
         val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
         val timeGreeting = when {
+            hour < 5 -> "Good Night"
             hour < 12 -> "Good Morning"
             hour < 17 -> "Good Afternoon"
-            else -> "Good Evening"
+            hour < 21 -> "Good Evening"
+            else -> "Good Night"
         }
 
         val user = auth.currentUser
