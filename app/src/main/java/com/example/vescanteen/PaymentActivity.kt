@@ -138,17 +138,24 @@ class PaymentActivity : AppCompatActivity() {
         if (requestCode == UPI_REQUEST_CODE) {
             // Parse UPI response
             val response = data?.getStringExtra("response") ?: ""
-            if (response.contains("success", ignoreCase = true) ||
-                response.contains("SUCCESS", ignoreCase = false)) {
-                proceedToConfirmation("UPI Payment")
-            } else if (response.contains("submitted", ignoreCase = true)) {
-                // Payment pending
-                Toast.makeText(this, "Payment pending. Order will be confirmed on receipt.",
-                    Toast.LENGTH_LONG).show()
-                proceedToConfirmation("UPI (Pending)")
-            } else {
-                Toast.makeText(this, "Payment cancelled or failed. Try again.",
-                    Toast.LENGTH_SHORT).show()
+
+            when {
+                // Payment successful — place order
+                response.contains("SUCCESS", ignoreCase = true) -> {
+                    proceedToConfirmation("UPI Payment ✓")
+                }
+                // Payment submitted but pending — DON'T place order
+                response.contains("submitted", ignoreCase = true) -> {
+                    Toast.makeText(this,
+                        "Payment is pending. Please wait for confirmation or try again.",
+                        Toast.LENGTH_LONG).show()
+                }
+                // Payment failed or cancelled — stay on payment screen
+                else -> {
+                    Toast.makeText(this,
+                        "Payment failed or cancelled. Please try again.",
+                        Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
