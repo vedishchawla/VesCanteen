@@ -19,6 +19,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 
 /**
  * Admin Menu Fragment — CRUD operations on menu items.
+ * Includes a "Reset Menu" option to seed defaults.
  */
 class AdminMenuFragment : Fragment() {
 
@@ -42,7 +43,8 @@ class AdminMenuFragment : Fragment() {
         fabAdd = view.findViewById(R.id.fabAddItem)
 
         rvMenu.layoutManager = LinearLayoutManager(context)
-        fabAdd.setOnClickListener { showAddItemDialog() }
+
+        fabAdd.setOnClickListener { showAddOrResetDialog() }
 
         loadMenuItems()
     }
@@ -96,6 +98,100 @@ class AdminMenuFragment : Fragment() {
             .show()
     }
 
+    /** Shows options: Add single item, or Reset menu with defaults */
+    private fun showAddOrResetDialog() {
+        val options = arrayOf("➕ Add New Item", "🔄 Reset Menu (Load Defaults)", "🗑 Delete All Items")
+        AlertDialog.Builder(requireContext())
+            .setTitle("Menu Actions")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> showAddItemDialog()
+                    1 -> confirmResetMenu()
+                    2 -> confirmDeleteAll()
+                }
+            }
+            .show()
+    }
+
+    private fun confirmResetMenu() {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Reset Menu")
+            .setMessage("This will delete ALL current items and load the default 10 items. Continue?")
+            .setPositiveButton("Reset") { _, _ -> resetMenuWithDefaults() }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun confirmDeleteAll() {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Delete All Items")
+            .setMessage("This will remove ALL menu items. Are you sure?")
+            .setPositiveButton("Delete All") { _, _ ->
+                progressBar.visibility = View.VISIBLE
+                db.collection("menuItems").get().addOnSuccessListener { result ->
+                    val batch = db.batch()
+                    for (doc in result) {
+                        batch.delete(doc.reference)
+                    }
+                    batch.commit().addOnSuccessListener {
+                        progressBar.visibility = View.GONE
+                        Toast.makeText(context, "All items deleted", Toast.LENGTH_SHORT).show()
+                        loadMenuItems()
+                    }
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    /** Clears Firestore menuItems and seeds with the 10 default items */
+    private fun resetMenuWithDefaults() {
+        progressBar.visibility = View.VISIBLE
+
+        // First delete all existing items
+        db.collection("menuItems").get().addOnSuccessListener { result ->
+            val batch = db.batch()
+            for (doc in result) {
+                batch.delete(doc.reference)
+            }
+            batch.commit().addOnSuccessListener {
+                // Now add defaults
+                seedDefaultItems()
+            }
+        }
+    }
+
+    private fun seedDefaultItems() {
+        val defaults = listOf(
+            mapOf("name" to "Poha", "price" to 35.0, "category" to "Breakfast", "imageUrl" to "", "description" to "Light and healthy flattened rice", "isAvailable" to true, "drawableResName" to "food_poha"),
+            mapOf("name" to "Chai", "price" to 10.0, "category" to "Beverages", "imageUrl" to "", "description" to "Hot Indian tea", "isAvailable" to true, "drawableResName" to "food_chai"),
+            mapOf("name" to "Samosa", "price" to 10.0, "category" to "Breakfast", "imageUrl" to "", "description" to "Crispy fried pastry", "isAvailable" to true, "drawableResName" to "food_samosa"),
+            mapOf("name" to "Vada Pav", "price" to 15.0, "category" to "Breakfast", "imageUrl" to "", "description" to "Mumbai's favourite snack", "isAvailable" to true, "drawableResName" to "food_vadapav"),
+            mapOf("name" to "Coffee", "price" to 15.0, "category" to "Beverages", "imageUrl" to "", "description" to "Fresh brewed coffee", "isAvailable" to true, "drawableResName" to "food_coffee"),
+            mapOf("name" to "Sandwich", "price" to 30.0, "category" to "Breakfast", "imageUrl" to "", "description" to "Grilled veg sandwich", "isAvailable" to true, "drawableResName" to "food_sandwich"),
+            mapOf("name" to "Juice", "price" to 25.0, "category" to "Beverages", "imageUrl" to "", "description" to "Fresh fruit juice", "isAvailable" to true, "drawableResName" to "food_juice"),
+            mapOf("name" to "Maggi", "price" to 25.0, "category" to "For You", "imageUrl" to "", "description" to "2-minute noodles", "isAvailable" to true, "drawableResName" to "food_maggi"),
+            mapOf("name" to "Dosa", "price" to 40.0, "category" to "Breakfast", "imageUrl" to "", "description" to "Crispy South Indian crepe", "isAvailable" to true, "drawableResName" to "food_dosa"),
+            mapOf("name" to "Lassi", "price" to 20.0, "category" to "Beverages", "imageUrl" to "", "description" to "Sweet yogurt drink", "isAvailable" to true, "drawableResName" to "food_lassi")
+        )
+
+        val batch = db.batch()
+        for (item in defaults) {
+            val docRef = db.collection("menuItems").document()
+            batch.set(docRef, item)
+        }
+        batch.commit()
+            .addOnSuccessListener {
+                progressBar.visibility = View.GONE
+                Toast.makeText(context, "✅ Menu reset with 10 default items!", Toast.LENGTH_SHORT).show()
+                loadMenuItems()
+            }
+            .addOnFailureListener { e ->
+                progressBar.visibility = View.GONE
+                Toast.makeText(context, "Failed: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+    }
+
     private fun showAddItemDialog() {
         val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_add_item, null)
         val dialog = AlertDialog.Builder(requireContext())
@@ -125,7 +221,8 @@ class AdminMenuFragment : Fragment() {
                 "category" to category,
                 "imageUrl" to imageUrl,
                 "description" to "",
-                "isAvailable" to true
+                "isAvailable" to true,
+                "drawableResName" to ""
             )
 
             db.collection("menuItems").add(item)
