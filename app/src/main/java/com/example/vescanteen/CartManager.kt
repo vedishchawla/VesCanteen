@@ -46,6 +46,11 @@ object CartManager {
     /** Get total item count (sum of quantities) */
     fun getItemCount(): Int = cartItems.sumOf { it.quantity }
 
+    /** Get quantity of a specific item by ID */
+    fun getItemQuantity(itemId: String): Int {
+        return cartItems.find { it.menuItem.id == itemId }?.quantity ?: 0
+    }
+
     /** Clear all items from cart */
     fun clearCart() {
         cartItems.clear()

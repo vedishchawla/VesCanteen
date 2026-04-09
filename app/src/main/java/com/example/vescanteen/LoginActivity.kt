@@ -13,16 +13,14 @@ import com.google.firebase.auth.FirebaseAuth
 
 /**
  * Login Activity — Firebase email/password auth.
- * Detects admin email and redirects to AdminActivity.
- *
- * Admin Credentials:
- *   Email: admin@vescanteen.com
- *   Password: admin123
+ * Only allows @ves.ac.in emails (students) and admin@vescanteen.com.
+ * Auto-creates admin account on first login attempt.
  */
 class LoginActivity : AppCompatActivity() {
 
     companion object {
         const val ADMIN_EMAIL = "admin@vescanteen.com"
+        const val ADMIN_PASSWORD = "admin123"
     }
 
     private lateinit var auth: FirebaseAuth
@@ -74,9 +72,25 @@ class LoginActivity : AppCompatActivity() {
             return
         }
 
+        // Validate email domain: only @ves.ac.in or admin
+        if (!isValidEmail(email)) {
+            etEmail.error = "Only @ves.ac.in emails are allowed"
+            etEmail.requestFocus()
+            return
+        }
+
         progressBar.visibility = View.VISIBLE
         btnLogin.isEnabled = false
 
+        // If admin, try login — if fails, auto-register then login
+        if (email.equals(ADMIN_EMAIL, ignoreCase = true)) {
+            loginAdmin(email, password)
+        } else {
+            loginRegular(email, password)
+        }
+    }
+
+    private fun loginRegular(email: String, password: String) {
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener(this) { task ->
                 progressBar.visibility = View.GONE
@@ -90,6 +104,40 @@ class LoginActivity : AppCompatActivity() {
                         Toast.LENGTH_LONG).show()
                 }
             }
+    }
+
+    /** Admin login — auto-creates account if it doesn't exist */
+    private fun loginAdmin(email: String, password: String) {
+        auth.signInWithEmailAndPassword(email, password)
+            .addOnCompleteListener(this) { task ->
+                if (task.isSuccessful) {
+                    progressBar.visibility = View.GONE
+                    btnLogin.isEnabled = true
+                    Toast.makeText(this, "Admin login successful!", Toast.LENGTH_SHORT).show()
+                    navigateBasedOnRole(email)
+                } else {
+                    // Account doesn't exist — create it automatically
+                    auth.createUserWithEmailAndPassword(ADMIN_EMAIL, ADMIN_PASSWORD)
+                        .addOnCompleteListener(this) { regTask ->
+                            progressBar.visibility = View.GONE
+                            btnLogin.isEnabled = true
+
+                            if (regTask.isSuccessful) {
+                                Toast.makeText(this, "Admin account created & logged in!", Toast.LENGTH_SHORT).show()
+                                navigateBasedOnRole(ADMIN_EMAIL)
+                            } else {
+                                Toast.makeText(this, "Admin login failed: ${regTask.exception?.message}",
+                                    Toast.LENGTH_LONG).show()
+                            }
+                        }
+                }
+            }
+    }
+
+    /** Check if email is either admin or @ves.ac.in */
+    private fun isValidEmail(email: String): Boolean {
+        return email.equals(ADMIN_EMAIL, ignoreCase = true) ||
+                email.lowercase().endsWith("@ves.ac.in")
     }
 
     /** Admin goes to AdminActivity, everyone else to MainActivity */

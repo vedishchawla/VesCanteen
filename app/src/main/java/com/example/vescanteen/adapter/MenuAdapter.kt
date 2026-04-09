@@ -9,13 +9,14 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.CenterCrop
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
+import com.example.vescanteen.CartManager
 import com.example.vescanteen.R
 import com.example.vescanteen.model.MenuItem
 import com.google.android.material.button.MaterialButton
 
 /**
  * RecyclerView Adapter for menu item cards in the grid.
- * Loads images from either drawable resources or URLs via Glide.
+ * Shows item count on the Add button when items are in cart.
  */
 class MenuAdapter(
     private var items: List<MenuItem>,
@@ -41,6 +42,9 @@ class MenuAdapter(
 
         holder.tvFoodName.text = item.name
         holder.tvPrice.text = "₹${item.price.toInt()}"
+
+        // Update button to show count if item is in cart
+        updateAddButton(holder.btnAdd, item)
 
         // Load image: first try drawable resource, then URL, then fallback
         if (item.drawableResName.isNotEmpty()) {
@@ -68,6 +72,19 @@ class MenuAdapter(
         // Add to cart button
         holder.btnAdd.setOnClickListener {
             onAddClick(item)
+            updateAddButton(holder.btnAdd, item)
+        }
+    }
+
+    /** Updates the add button text to show quantity if item is in cart */
+    private fun updateAddButton(btn: MaterialButton, item: MenuItem) {
+        val count = CartManager.getItemQuantity(item.id)
+        if (count > 0) {
+            btn.text = "✓ $count added"
+            btn.setBackgroundColor(btn.context.getColor(R.color.green_success))
+        } else {
+            btn.text = "ADD"
+            btn.setBackgroundColor(btn.context.getColor(R.color.accent))
         }
     }
 

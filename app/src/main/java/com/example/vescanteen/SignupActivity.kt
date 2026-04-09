@@ -76,6 +76,11 @@ class SignupActivity : AppCompatActivity() {
             etEmail.requestFocus()
             return
         }
+        if (!email.lowercase().endsWith("@ves.ac.in")) {
+            etEmail.error = "Only @ves.ac.in student emails are allowed"
+            etEmail.requestFocus()
+            return
+        }
         if (phone.isEmpty()) {
             etPhone.error = "Phone number is required"
             etPhone.requestFocus()

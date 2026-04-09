@@ -15,10 +15,11 @@ import com.example.vescanteen.model.MenuItem
 import com.google.android.material.chip.Chip
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import java.util.Calendar
 
 /**
  * Home Fragment - Displays menu items in a grid.
- * Fetches items from Firestore and shows by category.
+ * Greeting is time-based (Good Morning / Afternoon / Evening).
  */
 class HomeFragment : Fragment() {
 
@@ -55,11 +56,12 @@ class HomeFragment : Fragment() {
         chipBreakfast = view.findViewById(R.id.chipBreakfast)
         chipBeverages = view.findViewById(R.id.chipBeverages)
 
-        loadUsername()
+        loadGreeting()
 
         menuAdapter = MenuAdapter(emptyList()) { menuItem ->
             CartManager.addItem(menuItem)
             updateCartBadge()
+            menuAdapter.notifyDataSetChanged() // Refresh to update button counts
             Toast.makeText(context, "${menuItem.name} added to cart!", Toast.LENGTH_SHORT).show()
         }
         rvMenu.layoutManager = GridLayoutManager(context, 2)
@@ -80,19 +82,30 @@ class HomeFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         updateCartBadge()
+        menuAdapter.notifyDataSetChanged() // Refresh button counts on return
     }
 
-    private fun loadUsername() {
+    /** Time-based greeting: Good Morning / Afternoon / Evening */
+    private fun loadGreeting() {
+        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+        val timeGreeting = when {
+            hour < 12 -> "Good Morning"
+            hour < 17 -> "Good Afternoon"
+            else -> "Good Evening"
+        }
+
         val user = auth.currentUser
         if (user != null) {
             db.collection("users").document(user.uid).get()
                 .addOnSuccessListener { doc ->
                     val username = doc.getString("username") ?: "Student"
-                    tvGreeting.text = "Hey, $username!"
+                    tvGreeting.text = "$timeGreeting, $username! ☀️"
                 }
                 .addOnFailureListener {
-                    tvGreeting.text = "Welcome!"
+                    tvGreeting.text = "$timeGreeting!"
                 }
+        } else {
+            tvGreeting.text = "$timeGreeting!"
         }
     }
 
