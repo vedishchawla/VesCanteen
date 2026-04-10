@@ -151,11 +151,26 @@ const val CANTEEN_UPI_ID = "your-upi-id@bank"
 
 ---
 
-## 📸 Screenshots
+## 📱 App Screens
 
-| Home | Cart | Payment | Admin Dashboard |
-|------|------|---------|----------------|
-| Menu grid with categories | Review items & total | UPI + Cash options | Stats & recent orders |
+| Screen | Description |
+|--------|------------|
+| **Login** | Email/password authentication with `@ves.ac.in` domain restriction |
+| **Signup** | Student registration with username, email, phone, and password |
+| **Home** | Menu grid with food images, category chips (For You / Breakfast / Beverages), and quantity stepper |
+| **Search** | Instant search across all menu items |
+| **Cart** | Cart items with quantity controls, total price, and checkout button |
+| **Payment** | Choose between UPI (GPay, PhonePe, Paytm) or Cash at Counter |
+| **Order Confirmation** | Token number, order summary, timestamp, and payment method |
+| **Admin Dashboard** | Real-time stats — total orders, pending count, revenue today, menu items |
+| **Admin Orders** | Order list with status workflow (Pending → Preparing → Ready → Completed) |
+| **Admin Menu** | Add, delete, and reset menu items synced to student side |
+
+---
+
+## 📝 About
+
+VES Canteen is a digital ordering solution for the college canteen at **VES Institute of Technology (VESIT), Mumbai**. It replaces the manual ordering process with a streamlined mobile experience — students browse the menu, add items, and pay via UPI or cash, while canteen staff manage incoming orders in real-time through the admin panel. Built with Kotlin, Firebase, and Material Design as part of the **Mobile Application Development** course.
 
 ---
 

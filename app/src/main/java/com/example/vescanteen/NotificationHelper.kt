@@ -44,6 +44,8 @@ object NotificationHelper {
             }
         }
 
+
+        // Notifications banaya build kiya customised
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_check_circle)
             .setContentTitle("Order Confirmed! 🎉")
