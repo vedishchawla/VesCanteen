@@ -20,7 +20,7 @@ class PaymentActivity : AppCompatActivity() {
 
     companion object {
         // Replace with the canteen's actual UPI ID
-        const val CANTEEN_UPI_ID = "yashshiraskar1@okhdfcbank"
+        const val CANTEEN_UPI_ID = "vescanteen@upi"
         const val CANTEEN_NAME = "VES Canteen"
         const val UPI_REQUEST_CODE = 1001
     }
