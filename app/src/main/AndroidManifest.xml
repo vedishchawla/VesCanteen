@@ -5,6 +5,13 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Exp A1: GPS sensor for canteen location -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <!-- Exp A2: Background service for order status -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+
     <!-- Required for Android 11+ to see UPI apps -->
     <queries>
         <intent>
@@ -36,5 +43,11 @@
         <activity android:name=".PaymentActivity" />
         <activity android:name=".OrderConfirmationActivity" />
 
+        <!-- Exp A2: Background service for order status polling -->
+        <service
+            android:name=".OrderStatusService"
+            android:exported="false" />
+
     </application>
 </manifest>
+

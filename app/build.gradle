@@ -1,5 +1,7 @@
 plugins {
     id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+    id 'kotlin-kapt'
     id 'com.google.gms.google-services'
 }
 
@@ -25,6 +27,10 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
 }
 
 dependencies {
@@ -45,4 +51,11 @@ dependencies {
 
     // Image loading
     implementation 'com.github.bumptech.glide:glide:4.16.0'
+
+    // Room Database (Exp 7 — local SQLite database)
+    implementation 'androidx.room:room-runtime:2.6.1'
+    kapt 'androidx.room:room-compiler:2.6.1'
+
+    // Location Services (Exp A1 — GPS sensor)
+    implementation 'com.google.android.gms:play-services-location:21.0.1'
 }
