@@ -1,9 +1,11 @@
 package com.example.vescanteen
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
+import android.widget.CheckBox
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
@@ -15,12 +17,17 @@ import com.google.firebase.auth.FirebaseAuth
  * Login Activity — Firebase email/password auth.
  * Only allows @ves.ac.in emails (students) and admin@vescanteen.com.
  * Auto-creates admin account on first login attempt.
+ *
+ * Exp 5: Uses SharedPreferences to remember user's email ("Remember Me").
  */
 class LoginActivity : AppCompatActivity() {
 
     companion object {
         const val ADMIN_EMAIL = "admin@vescanteen.com"
         const val ADMIN_PASSWORD = "admin123"
+        private const val PREF_NAME = "ves_canteen_prefs"
+        private const val KEY_REMEMBER_EMAIL = "remember_email"
+        private const val KEY_SAVED_EMAIL = "saved_email"
     }
 
     private lateinit var auth: FirebaseAuth
@@ -29,6 +36,7 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var btnLogin: Button
     private lateinit var progressBar: ProgressBar
     private lateinit var tvSignup: TextView
+    private lateinit var cbRememberMe: CheckBox
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,6 +49,10 @@ class LoginActivity : AppCompatActivity() {
         btnLogin = findViewById(R.id.btnLogin)
         progressBar = findViewById(R.id.progressBar)
         tvSignup = findViewById(R.id.tvSignup)
+        cbRememberMe = findViewById(R.id.cbRememberMe)
+
+        // Exp 5: Load saved email from SharedPreferences
+        loadSavedEmail()
 
         btnLogin.setOnClickListener { loginUser() }
 
@@ -54,6 +66,31 @@ class LoginActivity : AppCompatActivity() {
         val currentUser = auth.currentUser
         if (currentUser != null) {
             navigateBasedOnRole(currentUser.email ?: "")
+        }
+    }
+
+    /** Exp 5: Load saved email from SharedPreferences */
+    private fun loadSavedEmail() {
+        val prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        val rememberMe = prefs.getBoolean(KEY_REMEMBER_EMAIL, false)
+        if (rememberMe) {
+            val savedEmail = prefs.getString(KEY_SAVED_EMAIL, "") ?: ""
+            etEmail.setText(savedEmail)
+            cbRememberMe.isChecked = true
+        }
+    }
+
+    /** Exp 5: Save email to SharedPreferences */
+    private fun saveEmailPreference(email: String) {
+        val prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        prefs.edit().apply {
+            putBoolean(KEY_REMEMBER_EMAIL, cbRememberMe.isChecked)
+            if (cbRememberMe.isChecked) {
+                putString(KEY_SAVED_EMAIL, email)
+            } else {
+                remove(KEY_SAVED_EMAIL)
+            }
+            apply()
         }
     }
 
@@ -81,6 +118,9 @@ class LoginActivity : AppCompatActivity() {
 
         progressBar.visibility = View.VISIBLE
         btnLogin.isEnabled = false
+
+        // Exp 5: Save email preference before login attempt
+        saveEmailPreference(email)
 
         // If admin, try login — if fails, auto-register then login
         if (email.equals(ADMIN_EMAIL, ignoreCase = true)) {
