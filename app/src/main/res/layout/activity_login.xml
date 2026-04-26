@@ -82,6 +82,17 @@
                 android:drawablePadding="12dp" />
         </com.google.android.material.textfield.TextInputLayout>
 
+        <!-- Exp 5: Remember Me checkbox (SharedPreferences) -->
+        <CheckBox
+            android:id="@+id/cbRememberMe"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Remember Me"
+            android:textSize="14sp"
+            android:textColor="@color/text_secondary"
+            android:layout_marginBottom="16dp"
+            android:buttonTint="@color/primary" />
+
         <!-- Login Button -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnLogin"
