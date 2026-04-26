@@ -17,6 +17,9 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // Exp 5: Initialize CartManager with context for SharedPreferences persistence
+        CartManager.init(this)
+
         bottomNav = findViewById(R.id.bottomNav)
 
         // Load Home fragment by default
