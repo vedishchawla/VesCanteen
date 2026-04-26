@@ -5,12 +5,15 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.CenterCrop
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.example.vescanteen.CartManager
+import com.example.vescanteen.NutritionApiHelper
 import com.example.vescanteen.R
 import com.example.vescanteen.model.MenuItem
 import com.google.android.material.button.MaterialButton
@@ -18,6 +21,8 @@ import com.google.android.material.button.MaterialButton
 /**
  * RecyclerView Adapter for menu item cards in the grid.
  * Shows ADD button → transforms to  - 1 +  stepper when items added.
+ *
+ * Exp 6: Long-press on any item fetches nutrition data from REST API.
  */
 class MenuAdapter(
     private var items: List<MenuItem>,
@@ -93,6 +98,39 @@ class MenuAdapter(
             CartManager.removeItem(item.id)
             updateStepperState(holder, item)
             onCartChanged()
+        }
+
+        /**
+         * Exp 6: Long-press to fetch nutrition info from REST API.
+         * Makes HTTP GET request to CalorieNinjas API.
+         */
+        holder.itemView.setOnLongClickListener {
+            showNutritionDialog(context, item.name)
+            true
+        }
+    }
+
+    /**
+     * Exp 6: Show nutrition info dialog.
+     * Fetches data from REST API on background thread.
+     */
+    private fun showNutritionDialog(context: android.content.Context, foodName: String) {
+        // Show loading dialog first
+        val dialog = AlertDialog.Builder(context)
+            .setTitle("Loading Nutrition Info...")
+            .setMessage("Fetching data for $foodName...")
+            .setCancelable(true)
+            .create()
+        dialog.show()
+
+        // Fetch from REST API
+        NutritionApiHelper.fetchNutrition(foodName) { result ->
+            dialog.dismiss()
+            AlertDialog.Builder(context)
+                .setTitle("Nutrition Info")
+                .setMessage(result)
+                .setPositiveButton("OK", null)
+                .show()
         }
     }
 
