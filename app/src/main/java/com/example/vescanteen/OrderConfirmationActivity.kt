@@ -2,6 +2,7 @@
 package com.example.vescanteen
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -10,6 +11,8 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.example.vescanteen.database.OrderHistoryDatabase
+import com.example.vescanteen.database.OrderHistoryEntity
 import com.google.android.material.button.MaterialButton
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -20,6 +23,9 @@ import java.util.Locale
 /**
  * Order Confirmation Activity - Shows order success with token number.
  * Displays payment method, saves to Firestore, and sends notification.
+ *
+ * Exp 7: Saves order to Room Database for offline order history.
+ * Exp A2: Starts background service to monitor order status.
  */
 class OrderConfirmationActivity : AppCompatActivity() {
 
@@ -83,6 +89,9 @@ class OrderConfirmationActivity : AppCompatActivity() {
         // Save order to Firestore
         saveOrderToFirestore(tokenNumber, cartItems, totalPrice, paymentMethod)
 
+        // Exp 7: Save order to Room Database for offline history
+        saveOrderToRoomDB(tokenNumber, cartItems, totalPrice, paymentMethod)
+
         // 🔔 Show notification
         NotificationHelper.showOrderConfirmation(this, tokenNumber, totalPrice)
 
@@ -137,8 +146,11 @@ class OrderConfirmationActivity : AppCompatActivity() {
 
         db.collection("orders")
             .add(order)
-            .addOnSuccessListener {
+            .addOnSuccessListener { docRef ->
                 android.util.Log.d("OrderConfirm", "Order saved to Firestore!")
+
+                // Exp A2: Start background service to monitor order status
+                startOrderStatusService(docRef.id, tokenNumber)
             }
             .addOnFailureListener { e ->
                 android.util.Log.e("OrderConfirm", "ORDER SAVE FAILED: ${e.message}")
@@ -146,5 +158,49 @@ class OrderConfirmationActivity : AppCompatActivity() {
                     "⚠️ Order save failed: ${e.message}",
                     android.widget.Toast.LENGTH_LONG).show()
             }
+    }
+
+    /**
+     * Exp 7: Save order to local Room Database.
+     * This allows viewing order history even when offline.
+     */
+    private fun saveOrderToRoomDB(
+        tokenNumber: Int,
+        cartItems: List<com.example.vescanteen.model.CartItem>,
+        totalPrice: Double,
+        paymentMethod: String
+    ) {
+        val itemNames = cartItems.joinToString(", ") {
+            "${it.menuItem.name} ×${it.quantity}"
+        }
+
+        val entity = OrderHistoryEntity(
+            tokenNumber = tokenNumber,
+            items = itemNames,
+            totalPrice = totalPrice,
+            paymentMethod = paymentMethod,
+            status = "confirmed",
+            timestamp = System.currentTimeMillis()
+        )
+
+        // Room DB operations must run on background thread
+        Thread {
+            val database = OrderHistoryDatabase.getDatabase(this)
+            database.orderHistoryDao().insertOrder(entity)
+            android.util.Log.d("OrderConfirm", "Order saved to Room DB!")
+        }.start()
+    }
+
+    /**
+     * Exp A2: Start background service to poll order status.
+     * Service checks Firestore every 30 seconds for status changes.
+     */
+    private fun startOrderStatusService(orderDocId: String, tokenNumber: Int) {
+        val serviceIntent = Intent(this, OrderStatusService::class.java).apply {
+            putExtra(OrderStatusService.EXTRA_ORDER_DOC_ID, orderDocId)
+            putExtra(OrderStatusService.EXTRA_TOKEN_NUMBER, tokenNumber)
+        }
+        startService(serviceIntent)
+        android.util.Log.d("OrderConfirm", "Order status service started for doc: $orderDocId")
     }
 }
