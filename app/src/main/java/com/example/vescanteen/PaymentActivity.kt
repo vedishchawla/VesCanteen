@@ -1,5 +1,6 @@
 package com.example.vescanteen
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -63,10 +64,14 @@ class PaymentActivity : AppCompatActivity() {
             paymentItemsContainer.addView(tv)
         }
 
-        // Default selection: Cash
-        rbCash.isChecked = true
-        selectedMethod = "cash"
-        updateSelectionUI()
+        // Exp 5: Load saved payment preference from SharedPreferences
+        val prefs = getSharedPreferences("ves_canteen_prefs", Context.MODE_PRIVATE)
+        val savedMethod = prefs.getString("last_payment_method", "cash") ?: "cash"
+        if (savedMethod == "upi") {
+            selectUPI()
+        } else {
+            selectCash()
+        }
 
         // Card click listeners for selection
         cardUPI.setOnClickListener { selectUPI() }
@@ -161,6 +166,10 @@ class PaymentActivity : AppCompatActivity() {
     }
 
     private fun proceedToConfirmation(paymentMethod: String) {
+        // Exp 5: Save payment method preference to SharedPreferences
+        val prefs = getSharedPreferences("ves_canteen_prefs", Context.MODE_PRIVATE)
+        prefs.edit().putString("last_payment_method", selectedMethod).apply()
+
         val intent = Intent(this, OrderConfirmationActivity::class.java)
         intent.putExtra("paymentMethod", paymentMethod)
         startActivity(intent)
